@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns="http://www.springframework.org/schema/beans"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+  <!--1.1 Spring容器中注册非@controller注解的Bean -->
+  <context:component-scan base-package="practice">
+    <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+  </context:component-scan>
+
+  <!--2.1 引入jdbc配置文件 -->
+  <bean id="propertyConfigurer"
+        class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <property name="locations">
+      <list>
+        <value>classpath:properties/*.properties</value>
+        <!--要是有多个配置文件，只需在这里继续添加即可 -->
+      </list>
+    </property>
+  </bean>
+
+  <!-- 配置数据源 -->
+  <!-- 3.1 使用properties来配置 -->
+  <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+    <property name="driverClassName" value="${jdbc_driverClassName}"/>
+    <property name="url" value="${jdbc_url}"/>
+    <property name="username" value="${jdbc_username}"/>
+    <property name="password" value="${jdbc_password}"/>
+  </bean>
+
+  <!--3.2 hibernate52 1 sessionFactory-->
+  <bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+    <property name="dataSource" ref="dataSource"/>
+    <property name="hibernateProperties">
+      <props>
+        <prop key="hibernate.show_sql">false</prop>
+        <prop key="hibernate.format_sql">false</prop>
+        <prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+      </props>
+    </property>
+    <property name="mappingResources">
+      <list>
+        <!--<value>hibernate/domain.hbm.xml</value>-->
+      </list>
+    </property>
+    <property name="packagesToScan">
+      <value>practice.domain</value>
+    </property>
+  </bean>
+
+  <!--3.3 事务管理-->
+  <bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+    <property name="sessionFactory" ref="sessionFactory"/>
+  </bean>
+  <!-- 事务注解驱动，标注@Transactional的类和方法将具有事务性 -->
+  <tx:annotation-driven transaction-manager="transactionManager"/>
+
+  <bean id="hibernateTemplate" class="org.springframework.orm.hibernate5.HibernateTemplate">
+    <property name="sessionFactory" ref="sessionFactory"/>
+  </bean>
+
+  <!--4 使用ehcache缓存 -->
+  <!--<bean id="ehCacheManager" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
+      <property name="configLocation" value="classpath:ehcache.xml" />
+  </bean>-->
+
+</beans>
